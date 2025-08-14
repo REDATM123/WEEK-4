@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC - Génération de Rapports</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.5/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .nav {
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .nav-button {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        
+        .nav-button.active {
+            background-color: #333;
+            color: white;
+        }
+        
+        .nav-button:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .nav-button.active:hover {
+            background-color: #333;
+        }
+        
+        .content {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .button:hover {
+            background-color: #555;
+        }
+        
+        .button-secondary {
+            background-color: white;
+            color: #333;
+            border: 1px solid #333;
+        }
+        
+        .button-secondary:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .reports-list {
+            margin-top: 30px;
+        }
+        
+        .report-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .report-info h4 {
+            margin: 0 0 5px 0;
+        }
+        
+        .report-info p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .report-status {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .buttons-group {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .buttons-group button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [formData, setFormData] = useState({
+                client: '',
+                reportType: 'monthly',
+                startDate: '',
+                endDate: '',
+                sendByEmail: false
+            });
+
+            const [reports, setReports] = useState([
+                { id: 1, client: 'Client A', type: 'Mensuel', status: 'Terminé', date: '2025-08-10' },
+                { id: 2, client: 'Client B', type: 'Hebdomadaire', status: 'En cours', date: '2025-08-09' },
+                { id: 3, client: 'Client C', type: 'Incident', status: 'Envoyé', date: '2025-08-08' }
+            ]);
+
+            const clients = [
+                'Client A',
+                'Client B', 
+                'Client C',
+                'Client D'
+            ];
+
+            const handleInputChange = (field, value) => {
+                setFormData({...formData, [field]: value});
+            };
+
+            const handleSubmit = () => {
+                if (!formData.client) {
+                    alert('Veuillez sélectionner un client');
+                    return;
+                }
+                
+                const newReport = {
+                    id: Date.now(),
+                    client: formData.client,
+                    type: formData.reportType === 'monthly' ? 'Mensuel' : 
+                          formData.reportType === 'weekly' ? 'Hebdomadaire' : 'Incident',
+                    status: 'En cours',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                setReports([newReport, ...reports]);
+                alert('Rapport créé avec succès!');
+                
+                setFormData({
+                    client: '',
+                    reportType: 'monthly',
+                    startDate: '',
+                    endDate: '',
+                    sendByEmail: false
+                });
+            };
+
+            const renderDashboard = () => (
+                <div>
+                    <h2>Tableau de Bord</h2>
+                    
+                    <div className="stats">
+                        <div className="stat-card">
+                            <div className="stat-number">156</div>
+                            <div className="stat-label">Total Incidents</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-number">142</div>
+                            <div className="stat-label">Incidents Résolus</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-number">8</div>
+                            <div className="stat-label">Rapports en Attente</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-number">4</div>
+                            <div className="stat-label">Clients Actifs</div>
+                        </div>
+                    </div>
+                    
+                    <div className="reports-list">
+                        <h3>Rapports Récents</h3>
+                        {reports.map(report => (
+                            <div key={report.id} className="report-item">
+                                <div className="report-info">
+                                    <h4>{report.client}</h4>
+                                    <p>{report.type} - {report.date}</p>
+                                </div>
+                                <div className="report-status">{report.status}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderGenerate = () => (
+                <div>
+                    <h2>Générer un Rapport</h2>
+                    
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="form-label">Client</label>
+                            <select 
+                                className="form-select"
+                                value={formData.client}
+                                onChange={(e) => handleInputChange('client', e.target.value)}
+                            >
+                                <option value="">Sélectionner un client</option>
+                                {clients.map(client => (
+                                    <option key={client} value={client}>{client}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Type de Rapport</label>
+                            <select 
+                                className="form-select"
+                                value={formData.reportType}
+                                onChange={(e) => handleInputChange('reportType', e.target.value)}
+                            >
+                                <option value="monthly">Mensuel</option>
+                                <option value="weekly">Hebdomadaire</option>
+                                <option value="incident">Incident</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="form-label">Date de Début</label>
+                            <input 
+                                type="date"
+                                className="form-input"
+                                value={formData.startDate}
+                                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Date de Fin</label>
+                            <input 
+                                type="date"
+                                className="form-input"
+                                value={formData.endDate}
+                                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="form-group">
+                        <div className="checkbox-group">
+                            <input 
+                                type="checkbox"
+                                id="email"
+                                checked={formData.sendByEmail}
+                                onChange={(e) => handleInputChange('sendByEmail', e.target.checked)}
+                            />
+                            <label htmlFor="email">Envoyer par email</label>
+                        </div>
+                    </div>
+                    
+                    <div className="buttons-group">
+                        <button className="button button-secondary">Aperçu</button>
+                        <button className="button" onClick={handleSubmit}>Générer</button>
+                    </div>
+                </div>
+            );
+
+            const renderHistory = () => (
+                <div>
+                    <h2>Historique des Rapports</h2>
+                    <div className="reports-list">
+                        {reports.map(report => (
+                            <div key={report.id} className="report-item">
+                                <div className="report-info">
+                                    <h4>{report.client}</h4>
+                                    <p>{report.type} - {report.date}</p>
+                                </div>
+                                <div className="report-status">{report.status}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const renderContent = () => {
+                if (activeTab === 'dashboard') return renderDashboard();
+                if (activeTab === 'generate') return renderGenerate();
+                if (activeTab === 'history') return renderHistory();
+                return renderDashboard();
+            };
+
+            return (
+                <div>
+                    <div className="header">
+                        <h1>SOC - Génération de Rapports</h1>
+                    </div>
+                    
+                    <div className="nav">
+                        <div className="nav-buttons">
+                            <button 
+                                className={`nav-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('dashboard')}
+                            >
+                                Tableau de Bord
+                            </button>
+                            <button 
+                                className={`nav-button ${activeTab === 'generate' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('generate')}
+                            >
+                                Générer Rapport
+                            </button>
+                            <button 
+                                className={`nav-button ${activeTab === 'history' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('history')}
+                            >
+                                Historique
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="container">
+                        <div className="content">
+                            {renderContent()}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
